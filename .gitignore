@@ -115,3 +115,8 @@ coverage/
 .vscode/
 .cursor/
 
+
+# ========================
+# The exercise brief (not ours to publish)
+# ========================
+docs/lead-snr-engineer-test-062026.pdf
