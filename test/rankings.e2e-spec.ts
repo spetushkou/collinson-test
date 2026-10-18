@@ -169,6 +169,10 @@ describe('activityRankings (e2e)', () => {
     } finally {
       upstream.fail.delete('forecast');
     }
+    // The same request succeeds once the forecast is back, so the error above came from the
+    // failure and not from a place the fixtures cannot answer.
+    const res = await rank('Paris', 'US').expect(200);
+    expect(errorCode(res)).toBeUndefined();
   });
 
   it('keeps answering GET /health', async () => {

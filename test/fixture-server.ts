@@ -32,11 +32,15 @@ function route(url: URL): { endpoint: Endpoint; body: string } | null {
           : 'geocode-unknown';
     return { endpoint: 'geocoding', body: fixture(file) };
   }
-  const city = (q.get('latitude') ?? '').startsWith('48.85')
-    ? 'paris'
-    : (q.get('latitude') ?? '').startsWith('38.72')
-      ? 'lisbon'
-      : null;
+  // Paris, Texas (33.66) has no fixture of its own and borrows Paris, France's weather: what
+  // matters is that its calls succeed, so a test that fails them is testing the failure.
+  const latitude = q.get('latitude') ?? '';
+  const city =
+    latitude.startsWith('48.85') || latitude.startsWith('33.66')
+      ? 'paris'
+      : latitude.startsWith('38.72')
+        ? 'lisbon'
+        : null;
   if (url.pathname === '/v1/forecast' && city) {
     return { endpoint: 'forecast', body: fixture(`forecast-${city}`) };
   }
