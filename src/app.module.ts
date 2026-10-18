@@ -4,11 +4,11 @@ import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { APP_CONFIG, AppConfig } from './config/config.js';
 import { CommonModule } from './common/common.module.js';
+import { formatError } from './common/format-error.js';
 import { ConfigModule } from './config/config.module.js';
 import { DatabaseModule } from './database/database.module.js';
 import { HealthModule } from './health/health.module.js';
-import { PlacesModule } from './places/places.module.js';
-import { WeatherModule } from './weather/weather.module.js';
+import { RankingsModule } from './rankings/rankings.module.js';
 
 @Module({
   imports: [
@@ -27,11 +27,11 @@ import { WeatherModule } from './weather/weather.module.js';
             ? true
             : join(process.cwd(), 'schema.gql'),
         sortSchema: true,
+        formatError: formatError(config.nodeEnv === 'production'),
       }),
     }),
     HealthModule,
-    PlacesModule,
-    WeatherModule,
+    RankingsModule,
   ],
 })
 export class AppModule {}
