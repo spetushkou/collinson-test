@@ -80,14 +80,15 @@ pnpm build         compile to dist/; `pnpm start:prod` runs it
 ```
 
 Configuration is optional; `.env_example` lists every variable with its default (port, database
-file, refresh window, upstream timeout, Open-Meteo URLs). A bad value stops the service at boot
-with the key named.
+file, refresh window, upstream timeout, Open-Meteo URLs). The service reads no `.env` file - set
+them in the shell, e.g. `PORT=5000 pnpm start:dev`. A bad value stops the service at boot with
+the key named.
 
 ## What I built
 
 - **One query**, `activityRankings(city, countryCode)`: the resolved place, the forecast's age and
-  whether it is stale, and the four activities in a fixed order, each with its seven days ranked
-  best first.
+  whether it is stale, and the four activities in a fixed order, each with up to seven days ranked
+  best first - empty when the activity is not applicable, fewer when a stale answer is served.
 - **Scores you can argue with.** Each score (0-100) is a sum of named factors from a small rule
   table per activity - snow base and fresh snow for skiing, wave height and period for surfing,
   rain chance, temperature, wind and sunshine for sightseeing. Indoor sightseeing is better the
@@ -97,7 +98,7 @@ with the key named.
 - **Stored weather with an honest age.** One row per place per local day, replaced on refresh.
   The stored week is served for 60 minutes; after that it is refreshed. If Open-Meteo is down,
   the stored days are served with `stale: true` and their age rather than an error.
-  Concurrent requests for the same place share one upstream call.
+  Concurrent requests for the same place share one forecast fetch.
 
 ## Assumptions
 
