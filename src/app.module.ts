@@ -4,11 +4,13 @@ import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { APP_CONFIG, AppConfig } from './config/config.js';
 import { ConfigModule } from './config/config.module.js';
+import { DatabaseModule } from './database/database.module.js';
 import { HealthModule } from './health/health.module.js';
 
 @Module({
   imports: [
     ConfigModule,
+    DatabaseModule,
     GraphQLModule.forRootAsync<ApolloDriverConfig>({
       driver: ApolloDriver,
       inject: [APP_CONFIG],
