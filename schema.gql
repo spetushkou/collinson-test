@@ -2,7 +2,100 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+enum Activity {
+  INDOOR_SIGHTSEEING
+  OUTDOOR_SIGHTSEEING
+  SKIING
+  SURFING
+}
+
+type ActivityRanking {
+  activity: Activity!
+
+  """false when there is no data to judge this activity here"""
+  applicable: Boolean!
+
+  """best first; empty when not applicable"""
+  days: [DayScore!]!
+  reason: String
+}
+
+type ActivityRankings {
+  """in a fixed order; scores compare days within an activity, not across"""
+  activities: [ActivityRanking!]!
+  forecast: ForecastMeta!
+  location: Location!
+}
+
+type DayScore {
+  """YYYY-MM-DD, local to the location"""
+  date: String!
+  factors: [Factor!]!
+
+  """1 is the best day for this activity"""
+  rank: Int!
+
+  """0..100"""
+  score: Int!
+}
+
+"""One rule that contributed to a score."""
+type Factor {
+  name: String!
+  points: Int!
+
+  """the measured value, with its unit and label"""
+  value: String!
+}
+
+"""How old the stored forecast behind the scores is."""
+type ForecastMeta {
+  ageMinutes: Int!
+
+  """ISO 8601, when the oldest day was fetched"""
+  fetchedAt: String!
+
+  """oldest marine fetch in the week; null if any day was never fetched"""
+  marineFetchedAt: String
+  source: String!
+
+  """true when a refresh failed and stored data is served"""
+  stale: Boolean!
+}
+
+"""What the city name resolved to - check it is the place you meant."""
+type Location {
+  admin1: String
+  country: String!
+
+  """
+  ISO 3166-1 alpha-2, e.g. "FR"
+  """
+  countryCode: String!
+
+  """metres"""
+  elevation: Float!
+  latitude: Float!
+  longitude: Float!
+  name: String!
+
+  """IANA timezone; the days are this zone's days"""
+  timezone: String!
+}
+
 type Query {
-  """Liveness probe over GraphQL."""
-  ping: String!
+  """
+  How good each of the next 7 days is for skiing, surfing, outdoor and indoor sightseeing in a city.
+  """
+  activityRankings(
+    """
+    a city or town, e.g. "Chamonix"
+    """
+    city: String!
+
+    """
+    ISO 3166-1 alpha-2 to pick among places with the same name, e.g. "US"
+    """
+    countryCode: String
+  ): ActivityRankings!
 }
