@@ -269,6 +269,8 @@ complete; a factor whose input is null scores 0 with the value "no data".
 ```
 SKIING                                 value                      points
 -------------------------------------  -------------------------  -------
+skiable snow                           base <5 and fresh <10 /    -100 "nothing else counts" / 0
+                                         otherwise
 snow base (snow_depth_max_cm)          <5 / 5-20 / 20-50 / >=50   0 "no base" / +10 / +25 / +40
 fresh snow (snowfall_cm)               <2 / 2-10 / 10-20 / >=20   0 / +10 / +18 / +25
 temperature (temp_max_c)               <-15 / -15..-10 / -10..2   -10 "bitter" / +5 "cold" / +15

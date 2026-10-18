@@ -6,6 +6,7 @@ import {
   skiingApplicability,
   surfingApplicability,
 } from './activities.js';
+import { rankDays } from './rank.js';
 import { day, pointsOf, sum } from './test-day.js';
 
 // Each case is the value just inside a band of the design's table, and the points it earns.
@@ -76,6 +77,7 @@ describe('skiing', () => {
       }),
     );
     expect(factors.map((f) => f.name)).toEqual([
+      'skiable snow',
       'snow base',
       'fresh snow',
       'temperature',
@@ -97,6 +99,37 @@ describe('skiing', () => {
         day({ snowDepthMaxCm: 0, snowfallCm: null }),
       ]),
     ).toEqual({ applicable: true });
+  });
+
+  it('scores a calm, clear day with no snow at 0 - weather alone is not skiing', () => {
+    const july = day({
+      snowDepthMaxCm: 0,
+      snowfallCm: 0,
+      tempMaxC: 28,
+      windMaxKmh: 5,
+      weatherCode: 0,
+    });
+    const factors = scoreSkiingDay(july);
+    expect(factors.find((f) => f.name === 'skiable snow')).toEqual({
+      name: 'skiable snow',
+      value: 'none - nothing else counts',
+      points: -100,
+    });
+    expect(rankDays([{ date: july.date, factors }])[0].score).toBe(0);
+  });
+
+  it('counts a heavy snowfall on a bare base as skiable', () => {
+    const factors = scoreSkiingDay(day({ snowDepthMaxCm: 0, snowfallCm: 15 }));
+    expect(pointsOf(factors, 'skiable snow')).toBe(0);
+  });
+
+  it('does not guess when the snow depth is missing', () => {
+    const factors = scoreSkiingDay(day({ snowDepthMaxCm: null }));
+    expect(factors.find((f) => f.name === 'skiable snow')).toEqual({
+      name: 'skiable snow',
+      value: 'no data',
+      points: 0,
+    });
   });
 
   it('stays applicable with no snow at all - the data exists and says no', () => {

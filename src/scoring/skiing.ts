@@ -7,9 +7,22 @@ import {
 } from './factors.js';
 import type { Applicability, DayInput, Factor } from './types.js';
 
+// Without snow to ski on, weather is irrelevant: a calm, clear July day must not rank as a
+// ski day. Less than a 5 cm base and less than 10 cm falling that day cancels the rest, so
+// the day scores 0 and says why.
+function skiableSnow(d: DayInput): Factor {
+  const name = 'skiable snow';
+  if (d.snowDepthMaxCm === null) return { name, value: 'no data', points: 0 };
+  const bare = d.snowDepthMaxCm < 5 && (d.snowfallCm ?? 0) < 10;
+  return bare
+    ? { name, value: 'none - nothing else counts', points: -100 }
+    : { name, value: 'yes', points: 0 };
+}
+
 // docs/process/design.md, "Scoring" - SKIING. A powder day reaches 100.
 export function scoreSkiingDay(d: DayInput): Factor[] {
   return [
+    skiableSnow(d),
     band(
       'snow base',
       d.snowDepthMaxCm,
