@@ -92,9 +92,12 @@ export class OpenMeteoClient {
     };
   }
 
+  // `timezone` decides whose calendar the days follow. The service passes the place's
+  // stored timezone so these days and its own window are counted on the same calendar.
   async forecast(
     latitude: number,
     longitude: number,
+    timezone = 'auto',
   ): Promise<DailyForecast[]> {
     const url = this.weatherUrl(
       this.config.openMeteo.forecastUrl,
@@ -102,6 +105,7 @@ export class OpenMeteoClient {
       latitude,
       longitude,
       DAILY_FORECAST,
+      timezone,
     );
     url.searchParams.set('hourly', 'snow_depth');
 
@@ -129,13 +133,18 @@ export class OpenMeteoClient {
   }
 
   // An inland point is a success with null values - the answer "no sea here" - not an error.
-  async marine(latitude: number, longitude: number): Promise<DailyMarine[]> {
+  async marine(
+    latitude: number,
+    longitude: number,
+    timezone = 'auto',
+  ): Promise<DailyMarine[]> {
     const url = this.weatherUrl(
       this.config.openMeteo.marineUrl,
       '/v1/marine',
       latitude,
       longitude,
       DAILY_MARINE,
+      timezone,
     );
     const body = await this.get<MarineBody>('marine', url);
     const d = requireDaily('marine', body, DAILY_MARINE);
@@ -152,13 +161,14 @@ export class OpenMeteoClient {
     latitude: number,
     longitude: number,
     daily: readonly string[],
+    timezone: string,
   ): URL {
     const url = endpointUrl(base, path);
     url.search = new URLSearchParams({
       latitude: String(latitude),
       longitude: String(longitude),
       daily: daily.join(','),
-      timezone: 'auto',
+      timezone,
       forecast_days: '7',
     }).toString();
     return url;
