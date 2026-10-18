@@ -134,13 +134,14 @@ the live API in a loop.
   (`ready`, `in progress`, `in review`, `in testing`). The PR's `Closes #<n>` closes the issue on
   merge - nobody closes it by hand.
 - **One branch, `main`** - plain GitHub Flow. Work happens on `<type>/<issue#>-<slug>`
-  (`feature/42-activity-ranking-query`), squashed to one commit before review, merged by rebase.
+  (`feature/42-activity-ranking-query`), merged by rebase. **Branches are NOT squashed:** the
+  commits are how a reviewer follows the progress, so each one is a step a reader can follow.
 - **Commits:** Conventional Commits with type `feature`, not `feat`; header <= 120 chars; no issue
   number in commit messages or PR titles - it lives in the branch name and the `Closes` line.
 - **PR description:** `Closes #<n>`, then Summary, Screenshots (omitted when there is nothing to
   show) and Manual Testing (steps against a local run; omitted when not applicable).
-- **The commit history is part of the trail too.** Small, honest commits on a branch read as
-  reasoning, so keep each one an isolated change even though the branch is squashed before merge.
+- **The commit history is part of the trail.** One isolated change per commit, in the order the
+  work happened, with a body that says why. A fix to an earlier step is a new commit, not an amend.
 - **Never `git push` without explicit approval.**
 - **ASCII only** in code, docs, commits and comments: `-` not en/em dashes, `->` not arrows.
 - Comments only where the code cannot say it - no comments that restate the code.
