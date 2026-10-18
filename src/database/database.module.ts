@@ -1,6 +1,7 @@
-import { Global, Module } from '@nestjs/common';
+import { Global, Inject, Module, OnModuleDestroy } from '@nestjs/common';
 import { APP_CONFIG, AppConfig } from '../config/config.js';
 import { createDb, DRIZZLE, runMigrations } from './database.js';
+import type { Db } from './database.js';
 
 // Migrations run before the provider resolves, so nothing can query an unmigrated database
 // and a reviewer never runs a migration command by hand.
@@ -19,4 +20,10 @@ import { createDb, DRIZZLE, runMigrations } from './database.js';
   ],
   exports: [DRIZZLE],
 })
-export class DatabaseModule {}
+export class DatabaseModule implements OnModuleDestroy {
+  constructor(@Inject(DRIZZLE) private readonly db: Db) {}
+
+  onModuleDestroy(): void {
+    this.db.$client.close();
+  }
+}
