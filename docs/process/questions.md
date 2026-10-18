@@ -85,3 +85,13 @@ work could continue. Each one is marked when it is later confirmed or reversed. 
 - **Why:** a partial week with its age stated is still useful for planning; inventing the missing
   days is not.
 - **Status:** open
+
+### Q11 - Is a postcode a city?
+
+- **Assumption:** yes, when the geocoder resolves it. `75001` comes back as Paris, and `location`
+  shows what it resolved to, as it does for any name. I found this while writing `docs/api.md`;
+  I had expected a postcode to be junk input.
+- **Why:** refusing a postcode that resolves cleanly would take extra validation to make the
+  answer worse. A postcode that resolves to the wrong place is the same risk as an ambiguous
+  name, and the same `location` check answers it.
+- **Status:** open
