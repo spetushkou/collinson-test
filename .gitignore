@@ -1,0 +1,117 @@
+# General Documentation
+# See http://help.github.com/ignore-files/ for more about ignoring files.
+
+# ========================
+# Output Directories
+# ========================
+dist/
+tmp/
+out-tsc/
+.out
+
+# ========================
+# Dependency Directories
+# ========================
+node_modules/
+
+# ========================
+# Claude Code
+# ========================
+**/.claude/settings.local.json
+
+# ========================
+# IDE & Editor Directories
+# ========================
+.idea/
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# ========================
+# OS & System Files
+# ========================
+.DS_Store
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+._*
+.AppleDouble
+.LSOverride
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+$RECYCLE.BIN/
+[Dd]esktop.ini
+*.lnk
+
+# ========================
+# Environment Variables
+# ========================
+.env
+.env.test
+.env.production
+.env*.local
+
+# ========================
+# Logs and Reports
+# ========================
+logs
+*.log
+npm-debug.log*
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# ========================
+# Cache and Temp Files
+# ========================
+.cache/
+.npm/
+.eslintcache
+
+# ========================
+# Shells, editors and scratch
+# ========================
+.node_repl_history
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+temp/
+__pycache__/
+*.py[cod]
+**/venv
+
+# ========================
+# Build Artifacts
+# ========================
+*.tsbuildinfo
+*.tgz
+*.pid
+*.pid.lock
+pids
+
+# ========================
+# Coverage
+# ========================
+coverage/
+*.lcov
+
+# local
+.claude/
+.mcp.json
+.serena/
+.vscode/
+.cursor/
+
