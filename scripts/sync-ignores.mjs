@@ -10,7 +10,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 
 const EXTRAS = {
-  prettier: ['pnpm-lock.yaml', 'schema.gql', '.oxlintrc.json'],
+  prettier: ['pnpm-lock.yaml', 'schema.gql', '.oxlintrc.json', 'drizzle/'],
   oxlint: [],
 };
 
