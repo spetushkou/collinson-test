@@ -23,7 +23,7 @@ introspection are off, so you send requests with `curl` there.
 
 There is one query, `activityRankings(city, countryCode)`. The full selection is in
 [`api-query.graphql`](api-query.graphql). In GraphiQL, paste it and set the variables to
-`{"city": "Lisbon"}`. From a shell, `jq` builds the body from the file:
+`{"city": "Lisbon"}`. From a shell at the repo root, `jq` builds the body from the file:
 
 ```bash
 rank() {
@@ -55,7 +55,8 @@ send                                   expect
 -------------------------------------  --------------------------------------------------
 {"city": "Lisbon"}                     SURFING applicable, 7 days. The best one on the day:
                                          2026-10-23, score 90 - wave height 1.2 m (+40),
-                                         period 11.1 s (+25), wind 11.5 km/h (+15)
+                                         wave period 11.1 s (+25), wind 11.5 km/h (+15),
+                                         air temperature 23.9 C (+10)
 {"city": "Paris"}                      Paris, FR. SURFING applicable=false, reason "no
                                          wave data for this location", days []
 {"city": "Paris", "countryCode": "US"} Paris, Texas, timezone America/Chicago
@@ -87,14 +88,21 @@ send                                    code                   message
                                                                  characters
 {"city": "Paris", "countryCode": "FRA"} BAD_USER_INPUT         countryCode must be a 2-letter
                                                                  ISO code, such as "FR"
-a new city while Open-Meteo is down     UPSTREAM_UNAVAILABLE   the weather service is
+a new city while the forecast is down   UPSTREAM_UNAVAILABLE   the weather service is
                                                                  unavailable and nothing is
                                                                  stored for this place
-no city argument at all                 GRAPHQL_VALIDATION_    Apollo's own message
+a new city while geocoding is down      UPSTREAM_UNAVAILABLE   Open-Meteo geocoding: <what
+                                                                 failed>
+api-query.graphql, no city variable     BAD_USER_INPUT         Variable "$city" of required
+                                                                 type "String!" was not
+                                                                 provided. (Apollo's)
+no city argument in an inline query     GRAPHQL_VALIDATION_    Apollo's own message
                                           FAILED
 ```
 
-The HTTP status is 200 for all of the codes above except the validation failure, which is 400.
+The service's own errors - the first five rows - come back with HTTP 200. Apollo's two at the
+bottom are rejected before the query runs, with HTTP 400.
+
 Anything else is a bug: outside production it comes back with Apollo's
 `INTERNAL_SERVER_ERROR` and a stack trace, and in production as "Internal server error" with
 the detail in the log.
@@ -108,8 +116,8 @@ you already asked for is due for a refresh:
 FORECAST_TTL_MINUTES=1 OPEN_METEO_FORECAST_URL=http://127.0.0.1:9 pnpm start:dev
 ```
 
-- A city stored more than a minute ago comes back with its stored days and
-  `"stale": true, "ageMinutes": 1`. The log says `decision=stale rows=7`.
+- A city stored more than a minute ago comes back with its stored days, `"stale": true`, and
+  `ageMinutes` saying how old they are. The log says `decision=stale rows=7`.
 - A city never asked for before gets `UPSTREAM_UNAVAILABLE`.
 
 The end-to-end test `test/rankings.e2e-spec.ts` checks both cases against a local stand-in for
