@@ -1,0 +1,36 @@
+query Rank($city: String!, $countryCode: String) {
+  activityRankings(city: $city, countryCode: $countryCode) {
+    location {
+      name
+      admin1
+      country
+      countryCode
+      latitude
+      longitude
+      elevation
+      timezone
+    }
+    forecast {
+      fetchedAt
+      ageMinutes
+      stale
+      marineFetchedAt
+      source
+    }
+    activities {
+      activity
+      applicable
+      reason
+      days {
+        date
+        rank
+        score
+        factors {
+          name
+          value
+          points
+        }
+      }
+    }
+  }
+}
