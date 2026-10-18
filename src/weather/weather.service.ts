@@ -70,22 +70,12 @@ export class WeatherService {
     now: Date,
   ): Promise<WeatherWeek> {
     const [forecast, marine] = await Promise.allSettled([
-      this.source.forecast(place.latitude, place.longitude),
-      this.source.marine(place.latitude, place.longitude),
+      this.source.forecast(place.latitude, place.longitude, place.timezone),
+      this.source.marine(place.latitude, place.longitude, place.timezone),
     ]);
 
     if (forecast.status === 'rejected') {
-      if (stored.length === 0) {
-        this.logger.warn(`place=${place.id} decision=failed nothing stored`);
-        throw new AppError(
-          'UPSTREAM_UNAVAILABLE',
-          'the weather service is unavailable and nothing is stored for this place',
-        );
-      }
-      this.logger.warn(
-        `place=${place.id} decision=stale rows=${stored.length} reason=${errorText(forecast.reason)}`,
-      );
-      return this.week(stored, now, true);
+      return this.fallBack(place, stored, now, errorText(forecast.reason));
     }
 
     if (marine.status === 'rejected') {
@@ -98,13 +88,36 @@ export class WeatherService {
       forecast.value,
       marine.status === 'fulfilled' ? marine.value : null,
       now.toISOString(),
+      dates[0],
     );
+    const refreshed = await this.repository.getWindow(place.id, dates);
+    // A 200 answer that renewed none of our window's days is no better than no answer.
+    if (!refreshed.some((d) => d.fetchedAt === now.toISOString())) {
+      return this.fallBack(place, stored, now, 'no days in the window');
+    }
     this.logger.log(`place=${place.id} decision=refreshed`);
-    return this.week(
-      await this.repository.getWindow(place.id, dates),
-      now,
-      false,
+    return this.week(refreshed, now, false);
+  }
+
+  private fallBack(
+    place: PlaceRow,
+    stored: DailyForecastRow[],
+    now: Date,
+    reason: string,
+  ): WeatherWeek {
+    if (stored.length === 0) {
+      this.logger.warn(
+        `place=${place.id} decision=failed nothing stored reason=${reason}`,
+      );
+      throw new AppError(
+        'UPSTREAM_UNAVAILABLE',
+        'the weather service is unavailable and nothing is stored for this place',
+      );
+    }
+    this.logger.warn(
+      `place=${place.id} decision=stale rows=${stored.length} reason=${reason}`,
     );
+    return this.week(stored, now, true);
   }
 
   private week(
@@ -113,16 +126,18 @@ export class WeatherService {
     stale: boolean,
   ): WeatherWeek {
     const oldest = Math.min(...days.map((d) => Date.parse(d.fetchedAt)));
-    const marineTimes = days
-      .map((d) => d.marineFetchedAt)
-      .filter((t): t is string => t !== null)
-      .sort();
+    // The week's marine time is the oldest one, and null if any day was never fetched from
+    // the sea: a day with no marine answer must read as "unavailable", not as "no sea here".
+    const marineTimes = days.map((d) => d.marineFetchedAt);
+    const marineFetchedAt = marineTimes.includes(null)
+      ? null
+      : (marineTimes as string[]).sort()[0];
     return {
       days,
       fetchedAt: new Date(oldest).toISOString(),
       ageMinutes: Math.floor((now.getTime() - oldest) / MINUTE_MS),
       stale,
-      marineFetchedAt: marineTimes.at(-1) ?? null,
+      marineFetchedAt,
     };
   }
 }

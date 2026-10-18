@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { AppError } from '../common/errors.js';
 import { loadConfig } from '../config/config.js';
 import { createDb, Db, runMigrations } from '../database/database.js';
-import { places, PlaceRow } from '../database/schema.js';
+import { dailyForecasts, places, PlaceRow } from '../database/schema.js';
 import {
   DailyForecast,
   DailyMarine,
@@ -60,6 +60,8 @@ describe('WeatherService', () => {
   let temp: number;
   let wave: number | null;
   let service: WeatherService;
+  let timezones: string[];
+  let forecastDates: string[] | null;
 
   const minutes = (n: number) => {
     now = new Date(now.getTime() + n * 60_000);
@@ -75,12 +77,18 @@ describe('WeatherService', () => {
     fail = { forecast: false, marine: false };
     temp = 20;
     wave = null;
+    timezones = [];
+    forecastDates = null;
     const client = {
-      forecast: async () => {
+      forecast: async (_lat: number, _lon: number, timezone: string) => {
         calls.forecast++;
+        timezones.push(timezone);
         await new Promise((r) => setTimeout(r, 5));
         if (fail.forecast) throw new UpstreamError('forecast', 'HTTP 503');
-        return forecastFor(localWindow(PARIS.timezone, now), temp);
+        return forecastFor(
+          forecastDates ?? localWindow(PARIS.timezone, now),
+          temp,
+        );
       },
       marine: async () => {
         calls.marine++;
@@ -185,6 +193,43 @@ describe('WeatherService', () => {
     expect(week.stale).toBe(true);
     expect(week.days).toHaveLength(6);
     expect(week.days[0].date).toBe(localWindow(PARIS.timezone, now)[0]);
+  });
+
+  it("asks Open-Meteo for the place's own timezone, the one the window uses", async () => {
+    await service.getWeek(PARIS);
+    expect(timezones).toEqual(['Europe/Paris']);
+  });
+
+  it('treats a successful answer with no days in the window as a failed refresh', async () => {
+    forecastDates = [];
+    const empty = await service.getWeek(PARIS).catch((e: unknown) => e);
+    expect((empty as AppError).code).toBe('UPSTREAM_UNAVAILABLE');
+
+    forecastDates = null;
+    await service.getWeek(PARIS);
+    minutes(61);
+    forecastDates = ['2026-01-01'];
+    const week = await service.getWeek(PARIS);
+    expect(week).toMatchObject({ stale: true, ageMinutes: 61 });
+    expect(week.days).toHaveLength(7);
+  });
+
+  it('reports no marine time when any day of the week was never fetched from the sea', async () => {
+    wave = 1.5;
+    await service.getWeek(PARIS);
+    minutes(24 * 60); // a new seventh day enters the window
+    fail.marine = true;
+    const week = await service.getWeek(PARIS);
+    expect(week.days.at(-1)?.marineFetchedAt).toBeNull();
+    expect(week.marineFetchedAt).toBeNull();
+  });
+
+  it('drops the days that have left the window when it refreshes', async () => {
+    await service.getWeek(PARIS);
+    minutes(3 * 24 * 60);
+    await service.getWeek(PARIS);
+    const rows = await db.$count(dailyForecasts);
+    expect(rows).toBe(7);
   });
 
   it('makes one upstream fetch for concurrent requests about the same place', async () => {

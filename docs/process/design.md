@@ -96,7 +96,7 @@ type ForecastMeta {
   fetchedAt: String! # ISO 8601, when the stored forecast was fetched
   ageMinutes: Int!
   stale: Boolean! # true = older than the refresh window and the refresh failed
-  marineFetchedAt: String # the marine data's own fetch time; null when none was ever stored
+  marineFetchedAt: String # oldest marine fetch time in the week; null if any day was never fetched
   source: String! # "open-meteo"
 }
 
@@ -151,8 +151,11 @@ place id, with a 30-day shelf life. Places do not move.
 
 ## Weather data
 
-Two upstream calls per place per refresh, both with `timezone=auto` so days are the place's own
-days and `forecast_days=7`:
+Two upstream calls per place per refresh, both with `timezone=<the place's stored timezone>` so
+Open-Meteo's days and our window are counted on the same calendar, and `forecast_days=7`.
+(`timezone=auto` would let Open-Meteo derive the zone from the coordinates, which can disagree
+with the geocoder's near a border; then the store never holds the whole window and every request
+refetches.)
 
 ```
 call      endpoint                             variables
@@ -251,9 +254,11 @@ the 7-day window          "is it even about the right days?"        a missing lo
 
 Invalidation is time-based, never event-based: nothing tells us a forecast changed, so the only
 honest signal is age. And expiry never deletes - the stale copy is the fallback when Open-Meteo is
-down, which is why TTL-style eviction (a cache's default) would be the wrong tool here. Rows that
-fall out of the window are left behind; cleanup is cut and the table is bounded by places x days
-ever fetched.
+down, which is why TTL-style eviction (a cache's default) would be the wrong tool here. The only
+deletion is of days that have left the window: a successful refresh removes the place's days
+before the window's first day, so the table holds about seven rows per place. A refresh only
+counts when it renewed at least one day of the window; an answer that misses the window is
+treated like a failed one.
 
 ## Scoring (Q1, Q6, Q7)
 
@@ -388,7 +393,6 @@ stale-while-revalidate              serving the old week at once and refreshing 
                                       refresh-on-read here blocks for up to two 5-second calls
                                       once an hour per place, which a planning query can afford,
                                       and it keeps one code path instead of two
-cleanup of old forecast rows        bounded by places x 7, grows slowly; a one-line job later
 auth, rate limiting of our own      not asked for; the free tier is 10,000 calls a day and our
                                       storage keeps us far under it
 hourly resolution in the API        the brief asks about days
