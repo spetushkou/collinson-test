@@ -12,7 +12,8 @@ work could continue. Each one is marked when it is later confirmed or reversed. 
   opinion, written where they can be argued with, and the numbers are a first pass.
 - **Why:** the brief gives no definition, and a weighted rule set is the simplest thing that is
   both explainable and tunable.
-- **Status:** open
+- **Status:** open. Changed during the build: a day with no snow on the ground and little falling
+  scores 0 for skiing whatever the weather - before that rule a calm, clear July day scored 10.
 
 ### Q2 - Which "Paris"?
 
