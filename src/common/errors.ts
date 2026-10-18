@@ -1,4 +1,5 @@
-// The failures a caller can act on, carried to the GraphQL response as `extensions.code`.
+// The failures a caller can act on, told apart by `code` - the value the API is meant to
+// report as `extensions.code`, so a client branches on it rather than on message text.
 export type ErrorCode =
   'BAD_USER_INPUT' | 'PLACE_NOT_FOUND' | 'UPSTREAM_UNAVAILABLE';
 
