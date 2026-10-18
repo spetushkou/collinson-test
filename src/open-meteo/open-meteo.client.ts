@@ -65,7 +65,7 @@ export class OpenMeteoClient {
     name: string,
     countryCode?: string,
   ): Promise<GeocodedPlace | null> {
-    const url = new URL('/v1/search', this.config.openMeteo.geocodingUrl);
+    const url = endpointUrl(this.config.openMeteo.geocodingUrl, '/v1/search');
     url.search = new URLSearchParams({
       name,
       count: '1',
@@ -106,11 +106,11 @@ export class OpenMeteoClient {
     url.searchParams.set('hourly', 'snow_depth');
 
     const body = await this.get<ForecastBody>('forecast', url);
+    const d = requireDaily('forecast', body, DAILY_FORECAST);
     const snowDepth = maxPerDay(
       body.hourly?.time ?? [],
       body.hourly?.snow_depth ?? [],
     );
-    const d = body.daily;
     return d.time.map((date, i) => ({
       date,
       tempMaxC: d.temperature_2m_max[i] ?? null,
@@ -138,7 +138,7 @@ export class OpenMeteoClient {
       DAILY_MARINE,
     );
     const body = await this.get<MarineBody>('marine', url);
-    const d = body.daily;
+    const d = requireDaily('marine', body, DAILY_MARINE);
     return d.time.map((date, i) => ({
       date,
       waveHeightMaxM: d.wave_height_max[i] ?? null,
@@ -153,7 +153,7 @@ export class OpenMeteoClient {
     longitude: number,
     daily: readonly string[],
   ): URL {
-    const url = new URL(path, base);
+    const url = endpointUrl(base, path);
     url.search = new URLSearchParams({
       latitude: String(latitude),
       longitude: String(longitude),
@@ -199,6 +199,32 @@ export class OpenMeteoClient {
       );
     }
   }
+}
+
+// Appends rather than resolves: new URL('/v1/x', base) would drop any path the base has,
+// such as a proxy prefix.
+function endpointUrl(base: string, path: string): URL {
+  return new URL(`${base.replace(/\/+$/, '')}${path}`);
+}
+
+// A 200 answer is only data when it has the shape we asked for; anything else - a proxy's
+// page, a changed API - is an upstream failure, not a TypeError deep in the mapping.
+function requireDaily<K extends string>(
+  endpoint: Endpoint,
+  body: { daily?: unknown },
+  keys: readonly K[],
+): { time: string[] } & Record<K, Series> {
+  const daily = body.daily as Record<string, unknown> | undefined;
+  const missing = ['time', ...keys].filter(
+    (key) => !Array.isArray(daily?.[key]),
+  );
+  if (missing.length) {
+    throw new UpstreamError(
+      endpoint,
+      `unexpected response, missing daily.${missing.join(', daily.')}`,
+    );
+  }
+  return daily as { time: string[] } & Record<K, Series>;
 }
 
 // Hourly times are local 'YYYY-MM-DDTHH:MM'; the day is the part before the 'T'.
