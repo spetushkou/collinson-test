@@ -76,3 +76,4 @@ docs/lead-snr-engineer-test-062026.pdf
 pnpm-lock.yaml
 schema.gql
 .oxlintrc.json
+drizzle/
