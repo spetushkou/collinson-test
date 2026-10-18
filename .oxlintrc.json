@@ -76,6 +76,7 @@
     ".serena/",
     ".vscode/",
     ".cursor/",
+    "data/",
     "docs/lead-snr-engineer-test-062026.pdf"
   ]
 }
