@@ -67,6 +67,8 @@ Lisbon on 2026-10-18, trimmed to the best surf day:
 - Errors carry a code in `extensions.code`: `BAD_USER_INPUT`, `PLACE_NOT_FOUND`,
   `UPSTREAM_UNAVAILABLE`.
 - `GET /health` is the liveness check. The full schema is in [`schema.gql`](schema.gql).
+- [`docs/api.md`](docs/api.md) has requests to copy and paste: the cases worth trying, every
+  error code, and how to see the stale fallback by hand.
 
 ```
 command            does
