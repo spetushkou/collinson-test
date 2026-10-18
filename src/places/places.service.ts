@@ -3,7 +3,7 @@ import { and, eq, gte } from 'drizzle-orm';
 import { CLOCK } from '../common/clock.js';
 import type { Clock } from '../common/clock.js';
 import { AppError } from '../common/errors.js';
-import { DRIZZLE } from '../database/database.js';
+import { DRIZZLE, writeTransaction } from '../database/database.js';
 import type { Db } from '../database/database.js';
 import { placeLookups, places, PlaceRow } from '../database/schema.js';
 import { OpenMeteoClient } from '../open-meteo/open-meteo.client.js';
@@ -83,7 +83,7 @@ export class PlacesService {
 
     const fetchedAt = now.toISOString();
     const row: PlaceRow = { ...hit, fetchedAt };
-    await this.db.transaction(async (tx) => {
+    await writeTransaction(this.db, async (tx) => {
       await tx
         .insert(places)
         .values(row)
