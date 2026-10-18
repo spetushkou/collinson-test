@@ -77,3 +77,4 @@ pnpm-lock.yaml
 schema.gql
 .oxlintrc.json
 drizzle/
+test/fixtures/
