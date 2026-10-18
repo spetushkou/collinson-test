@@ -42,6 +42,11 @@ describe('loadConfig', () => {
     ['UPSTREAM_TIMEOUT_MS', '1.5'],
     ['NODE_ENV', 'staging'],
     ['OPEN_METEO_FORECAST_URL', 'not a url'],
+    ['OPEN_METEO_FORECAST_URL', 'localhost:9999'],
+    ['OPEN_METEO_MARINE_URL', 'javascript:x'],
+    ['OPEN_METEO_GEOCODING_URL', 'ftp://example.com'],
+    ['PORT', '70000'],
+    ['UPSTREAM_TIMEOUT_MS', '2147483648'],
     ['DB_URL', ''],
   ])('rejects %s=%s and names the key', (key, value) => {
     expect(() => loadConfig({ [key]: value })).toThrow(ConfigError);
