@@ -23,12 +23,12 @@ const NODE_ENVS = ['development', 'production', 'test'] as const;
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   const problems: string[] = [];
 
-  const positiveInt = (key: string, fallback: number): number => {
+  const positiveInt = (key: string, fallback: number, max: number): number => {
     const raw = env[key];
     if (raw === undefined) return fallback;
     const value = Number(raw);
-    if (!Number.isInteger(value) || value <= 0) {
-      problems.push(`${key} must be a positive integer, got "${raw}"`);
+    if (!Number.isInteger(value) || value <= 0 || value > max) {
+      problems.push(`${key} must be an integer from 1 to ${max}, got "${raw}"`);
       return fallback;
     }
     return value;
@@ -36,11 +36,16 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
 
   const baseUrl = (key: string, fallback: string): string => {
     const raw = env[key] ?? fallback;
+    // `new URL` alone accepts any "scheme:rest" string, so "localhost:9999" would pass with
+    // "localhost:" as its scheme and fail only at the first upstream call.
+    let usable = false;
     try {
-      new URL(raw);
+      const url = new URL(raw);
+      usable = ['http:', 'https:'].includes(url.protocol) && url.host !== '';
     } catch {
-      problems.push(`${key} must be a URL, got "${raw}"`);
+      usable = false;
     }
+    if (!usable) problems.push(`${key} must be an http(s) URL, got "${raw}"`);
     return raw.replace(/\/+$/, '');
   };
 
@@ -55,11 +60,12 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   if (dbUrl.trim() === '') problems.push('DB_URL must not be empty');
 
   const config: AppConfig = {
-    port: positiveInt('PORT', 4000),
+    port: positiveInt('PORT', 4000, 65535),
     nodeEnv: nodeEnv as AppConfig['nodeEnv'],
     dbUrl,
-    forecastTtlMinutes: positiveInt('FORECAST_TTL_MINUTES', 60),
-    upstreamTimeoutMs: positiveInt('UPSTREAM_TIMEOUT_MS', 5000),
+    forecastTtlMinutes: positiveInt('FORECAST_TTL_MINUTES', 60, 7 * 24 * 60),
+    // setTimeout overflows above 2^31-1 ms and fires at once; a minute is already generous.
+    upstreamTimeoutMs: positiveInt('UPSTREAM_TIMEOUT_MS', 5000, 60_000),
     openMeteo: {
       forecastUrl: baseUrl(
         'OPEN_METEO_FORECAST_URL',
