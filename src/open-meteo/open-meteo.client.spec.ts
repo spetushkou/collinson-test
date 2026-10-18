@@ -162,7 +162,55 @@ describe('OpenMeteoClient', () => {
     });
   });
 
+  describe('base URLs', () => {
+    it('keeps a path prefix in a configured base URL', async () => {
+      const prefixed = loadConfig({
+        OPEN_METEO_GEOCODING_URL: 'http://localhost:9999/geocoding/',
+        OPEN_METEO_FORECAST_URL: 'http://localhost:9999/forecast',
+      });
+      const { fetchFn, urls } = fakeFetch((url) =>
+        json(
+          fixture(
+            url.pathname.includes('search')
+              ? 'geocode-paris'
+              : 'forecast-paris',
+          ),
+        ),
+      );
+      const client = new OpenMeteoClient(prefixed, fetchFn);
+      await client.geocode('Paris');
+      await client.forecast(1, 2);
+
+      expect(urls.map((u) => u.pathname)).toEqual([
+        '/geocoding/v1/search',
+        '/forecast/v1/forecast',
+      ]);
+    });
+  });
+
   describe('failures', () => {
+    it.each([
+      ['no daily block', {}],
+      ['a requested variable missing', { daily: { time: ['2026-10-18'] } }],
+    ])(
+      'turns an HTTP 200 forecast with %s into an UpstreamError',
+      async (_case, body) => {
+        const { fetchFn } = fakeFetch(() => json(body));
+        const error = await new OpenMeteoClient(config, fetchFn)
+          .forecast(1, 2)
+          .catch((e: unknown) => e);
+        expect(error).toBeInstanceOf(UpstreamError);
+        expect((error as UpstreamError).endpoint).toBe('forecast');
+      },
+    );
+
+    it('turns an HTTP 200 marine answer with no daily block into an UpstreamError', async () => {
+      const { fetchFn } = fakeFetch(() => json({}));
+      await expect(
+        new OpenMeteoClient(config, fetchFn).marine(1, 2),
+      ).rejects.toBeInstanceOf(UpstreamError);
+    });
+
     it('turns an HTTP error into an UpstreamError naming the endpoint', async () => {
       const { fetchFn } = fakeFetch(() => json({ reason: 'down' }, 500));
       const error = await new OpenMeteoClient(config, fetchFn)
