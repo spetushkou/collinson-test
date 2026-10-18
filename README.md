@@ -31,7 +31,7 @@ are listed in `.env_example`; for now they come from the shell environment (`POR
 
 ```bash
 pnpm install
-pnpm start:dev          # http://localhost:4000, restarts on change
+pnpm start:dev          # http://localhost:4000, restarts on change; also logs to /tmp/collinson-api.log
 ```
 
 Then:
