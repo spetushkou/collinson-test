@@ -8,6 +8,7 @@ import { ConfigModule } from './config/config.module.js';
 import { DatabaseModule } from './database/database.module.js';
 import { HealthModule } from './health/health.module.js';
 import { PlacesModule } from './places/places.module.js';
+import { WeatherModule } from './weather/weather.module.js';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { PlacesModule } from './places/places.module.js';
     }),
     HealthModule,
     PlacesModule,
+    WeatherModule,
   ],
 })
 export class AppModule {}
