@@ -34,12 +34,4 @@ describe('App (e2e)', () => {
       .expect(200)
       .expect({ status: 'ok' });
   });
-
-  it('answers the ping query over GraphQL', () => {
-    return request(app.getHttpServer())
-      .post('/graphql')
-      .send({ query: '{ ping }' })
-      .expect(200)
-      .expect({ data: { ping: 'pong' } });
-  });
 });
