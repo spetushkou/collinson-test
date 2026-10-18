@@ -8,7 +8,13 @@ import { HealthModule } from './health/health.module.js';
   imports: [
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
-      autoSchemaFile: join(process.cwd(), 'schema.gql'),
+      // Outside production the schema is written to schema.gql, which is committed so the API
+      // can be read without running it. In production it stays in memory: a read-only
+      // filesystem must not stop the service from starting.
+      autoSchemaFile:
+        process.env.NODE_ENV === 'production'
+          ? true
+          : join(process.cwd(), 'schema.gql'),
       sortSchema: true,
     }),
     HealthModule,
