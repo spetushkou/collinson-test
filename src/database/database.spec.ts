@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { sql } from 'drizzle-orm';
-import { createDb, runMigrations } from './database.js';
+import { createDb, runMigrations, writeTransaction } from './database.js';
 import { dailyForecasts, places } from './schema.js';
 
 describe('database', () => {
@@ -29,6 +29,44 @@ describe('database', () => {
       'place_lookups',
       'places',
     ]);
+  });
+
+  it('runs writes one at a time, and a failed one does not block the next', async () => {
+    const db = createDb(`file:${join(dir, 'weather.sqlite')}`);
+    await runMigrations(db);
+    const place = (id: number) => ({
+      id,
+      name: `P${id}`,
+      admin1: null,
+      country: 'X',
+      countryCode: 'XX',
+      latitude: 0,
+      longitude: 0,
+      elevation: 0,
+      timezone: 'UTC',
+      population: null,
+      fetchedAt: '2026-10-18T12:00:00.000Z',
+    });
+    const results = await Promise.allSettled([
+      writeTransaction(db, (tx) => tx.insert(places).values(place(1))),
+      writeTransaction(db, async () => {
+        throw new Error('boom');
+      }),
+      ...[2, 3, 4, 5].map((id) =>
+        writeTransaction(db, (tx) => tx.insert(places).values(place(id))),
+      ),
+    ]);
+
+    expect(results.map((r) => r.status)).toEqual([
+      'fulfilled',
+      'rejected',
+      'fulfilled',
+      'fulfilled',
+      'fulfilled',
+      'fulfilled',
+    ]);
+    expect(await db.$count(places)).toBe(5);
+    db.$client.close();
   });
 
   it('stores a day with every weather value missing', async () => {

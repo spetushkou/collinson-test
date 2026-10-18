@@ -116,6 +116,29 @@ describe('PlacesService', () => {
     },
   );
 
+  it('resolves many new cities at once without the database refusing a write', async () => {
+    answer = (name) => ({
+      ...PARIS_FR,
+      id: 1000 + name.length * 31 + name.charCodeAt(0),
+      name,
+    });
+    const names = [
+      'Lyon',
+      'Nice',
+      'Brest',
+      'Lille',
+      'Dijon',
+      'Reims',
+      'Lyon',
+      'Nice',
+    ];
+    const settled = await Promise.allSettled(
+      names.map((name) => service.resolve(name)),
+    );
+    const failed = settled.filter((s) => s.status === 'rejected');
+    expect(failed).toEqual([]);
+  });
+
   it('reports a name the geocoder does not know as PLACE_NOT_FOUND', async () => {
     const error = await service.resolve('xqzvplace').catch((e: unknown) => e);
     expect((error as AppError).code).toBe('PLACE_NOT_FOUND');
