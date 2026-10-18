@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- Node `>=22.13` (`engines`), pnpm 10; packages younger than 7 days are refused by `.npmrc`.
+- Node `>=22.12` (`engines`), pnpm 10; packages younger than 7 days are refused by `.npmrc`.
 - ESM: relative imports end in `.js`; `"type": "module"`.
 - Commit type `feature`, not `feat`; no issue number in commit messages; the branch is `<type>/<issue#>-<slug>`; commits are not squashed.
 - Tests never call the live API. Fixtures are captured once by a script and committed.
@@ -37,7 +37,7 @@
 **Files:**
 
 - Create: `.github/workflows/ci.yml`
-- Modify: `package.json` (`engines.node` -> `>=22.13`), `.gitignore` (add `data/`)
+- Modify: `package.json` (`packageManager`), `.gitignore` (add `data/`)
 - Commit (already written, uncommitted): `docs/process/design.md`, `docs/process/plan.md`, `docs/process/questions.md`, `docs/process/decisions.md`
 
 **Interfaces:**
@@ -45,7 +45,7 @@
 - Produces: a green check on every push and pull request; the design and this plan on `main`.
 
 - [ ] **Step 1: Write `.github/workflows/ci.yml`** - trigger `push` and `pull_request`; `actions/checkout@v4`; `pnpm/action-setup@v4` (version from `packageManager` - add `"packageManager": "pnpm@10.33.4"` to `package.json`); `actions/setup-node@v4` with `node-version-file: .nvmrc` and `cache: pnpm`; then `pnpm install --frozen-lockfile`, `pnpm lint`, `pnpm type-check`, `pnpm format`, `pnpm ignore:check`, `pnpm test`, `pnpm test:e2e`, `pnpm build`, one step each.
-- [ ] **Step 2: Raise `engines.node` to `>=22.13` and gitignore `data/`** (the SQLite file's directory).
+- [ ] **Step 2: Gitignore `data/`** (the SQLite file's directory) and re-sync the ignore lists. The Node floor stays `>=22.12`: the 22.13 floor was for `node:sqlite`, which the design dropped for libsql.
 - [ ] **Step 3: Verify locally** - run the same eight commands in order; expected: every one exits 0.
 - [ ] **Step 4: Commit the docs and the workflow separately** - `docs: design and plan for the activity rankings` (the four process files), then `ci: run the gates on every push`.
 - [ ] **Step 5: After the PR opens, confirm the workflow ran** - `gh run list --limit 1 --json conclusion` on the branch; expected `success`.
