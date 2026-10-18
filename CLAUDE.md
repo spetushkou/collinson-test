@@ -80,7 +80,23 @@ pnpm format       prettier --check (format:fix writes)
 pnpm test         unit tests; pnpm test:e2e for end-to-end
 ```
 
-Run `type-check`, `lint`, `format` and both test suites before every push.
+**Git hooks (husky) enforce the gates:** `pre-commit` runs lint-staged (prettier, then oxlint, on
+the staged files), `commit-msg` runs commitlint (`commitlint.config.js`: the `feature` type set,
+header <= 120), and `pre-push` runs lint, type-check, format, the ignore check and the unit tests.
+Never bypass them with `--no-verify`.
+
+**The ignore lists are generated.** `.gitignore` is the source; `pnpm ignore:sync` writes
+`.prettierignore` and the `ignorePatterns` of `.oxlintrc.json` from it (`scripts/sync-ignores.mjs`).
+Edit `.gitignore` and re-sync - never edit the generated lists by hand; `pnpm ignore:check` fails on
+drift. oxlint needs its own copy because it honours `.gitignore` only when walking a directory, not
+for the explicit paths lint-staged passes.
+
+**Every server runner copies its output to `/tmp/collinson-api.log`** (`tee`, inside
+`bash -c 'set -o pipefail ...'` so extra arguments reach the server and a crash still fails the
+script). The file is truncated on each start - it holds the latest run only, and a second start
+that fails on a busy port overwrites the log of the one still running. Read it before guessing
+why a request failed. Stop a watch-mode server by its `nest.js start` process (or by the port);
+killing only the `bash` wrapper leaves the watcher running as an orphan that keeps the port.
 
 Layout: one Nest module per domain under `src/` (`src/health/` so far). **Storage is open** - it is
 the next design call and belongs in `docs/process/decisions.md` when it is made. The service reads
