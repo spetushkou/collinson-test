@@ -26,7 +26,8 @@ so the API can be read without running anything.
 
 ## How to run it
 
-Needs Node.js 20 or newer (built on 22) and pnpm 10.
+Needs Node.js 22 (`.nvmrc`; `nvm use` picks it up) and pnpm 10. The variables the service reads
+are listed in `.env_example`; for now they come from the shell environment (`PORT=4001 pnpm start:dev`).
 
 ```bash
 pnpm install
