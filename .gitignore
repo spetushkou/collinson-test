@@ -119,7 +119,7 @@ coverage/
 # ========================
 # Local SQLite database
 # ========================
-data/
+/data/
 
 # ========================
 # The exercise brief (not ours to publish)
